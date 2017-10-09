@@ -244,27 +244,22 @@ uint64_t encrypt(uint64_t m)
 		rn = l ^ f(r, keys[i]);
 		l = ln;
 		r = rn;
-		cout << "\n Round : " << i + 1;
-		if(i%2 == 1)
-		{
-			prnb(((l>>32) | r), 0, 64, 8);
-		}
-		else
-		{
-			prnb(((r>>32) | r), 0, 64, 8);
-		}
-		cmpa[i] = (keys[i]);
+		// cout << "\n Round : " << i + 1;
+		// if(i%2 == 1)
+		// {
+		// 	prnb(((l>>32) | r), 0, 64, 8);
+		// }
+		// else
+		// {
+		// 	prnb(((r>>32) | r), 0, 64, 8);
+		// }
 
 	}
 
 	uint64_t result = ( (l>>32) | r);
 
 	// // do inverse permutation on result
-	cout << "\nbeofre ipia ";
-	prnb(result, 0,64,8); 
 	result = subs(result, ipia, 64);
-	cout << "\nresult is ";
-	prnb(result, 0, 64, 8);
 	return result;
 }
 
@@ -274,8 +269,6 @@ uint64_t decrypt(uint64_t c)
 	uint64_t right_mask = 0x00000000FFFFFFFF;
 	uint64_t l, r, ln, rn, ipv;
 	ipv = fip(c);
-	cout << "\nFIP value : ";
-	prnb(ipv, 0, 64, 8);
 	l = ipv & left_mask;
 	r = ipv & right_mask;
 	r <<= 32;
@@ -286,23 +279,11 @@ uint64_t decrypt(uint64_t c)
 		rn = l ^ f(r, keys[15-i]);
 		l = ln;
 		r = rn;
-		cout << "\n Round : " << i + 1;
-		if(i%2 == 1)
-		{
-			prnb(((l>>32) | r), 0, 64, 8);
-		}
-		else
-		{
-			prnb(((r>>32) | r), 0, 64, 8);
-		}
-		cmpb[i] = keys[15-i];
 	}
 
 	uint64_t result = ( (l>>32) | r);
-	prnb(result, 0, 64, 8);
 	// do inverse permutation on result
 	result = subs(result, ipia, 64);
-	prnb(result, 0, 64, 8);
 	return result;
 }
 
@@ -327,25 +308,12 @@ int main()
 
 
 	make_keys();	//keys[16] has the 48 bit keys
-	cout << "\nThe keys are : ";
-	for(int i=0;i<16;i++)
-		{
-			cout << "\nKey :"<<i;
-			prnb(keys[i], 0, 48, 6);
-		}
+
 	uint64_t m = 0b0000000100100011010001010110011110001001101010111100110111101111;
-	uint64_t c = 0x85e813540f0ab405;
 
 	uint64_t cc = encrypt(m);
 	cout << "\nthe encrypted value is " << hex << cc;
-	prnb(subs(cc, ipa, 64), 0, 64, 8);
 	cout << "\nThe decrypted value is " << hex << decrypt(cc);
-
-	for(int i=0;i<16;i++)
-	{
-		if(cmpa[i] == cmpb[15-i])
-			cout << "\nsame " << i;
-	}
 	cout << endl;
 	return 0;
 }	
