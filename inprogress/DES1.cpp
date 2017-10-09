@@ -14,7 +14,7 @@ char ipa[64] = {
 64, 56, 48, 40, 32, 24, 16, 8,
 57, 49, 41, 33, 25, 17, 9, 1,
 59, 51, 43, 35, 27, 19, 11, 3,
-61, 54, 45, 37, 29, 21, 13, 5,
+61, 53, 45, 37, 29, 21, 13, 5,
 63, 55, 47, 39, 31, 23, 15, 7
 };
 
@@ -126,30 +126,22 @@ uint64_t keys[16] = {0};	//16 keys  required
 
 void lrotate(uint64_t &val, char l, char r, char cnt)	//l and r are the msb and lsb respectively of the rotated area. 1 -> LSB. right most bit
 {
-	// cout<< "\n l, r, cnt = "<<(int)l<<", "<<(int)r<<", "<<(int)cnt;
 	int rv;
 	rv = (val & ((uint64_t)1 << (64-l)))?1:0;
-	// cout<<"\n rv = " << rv;
 	uint64_t mask;
 	
 	mask = ((uint64_t)1 << (64-l)) - ((uint64_t)1 << (64-r));
 	mask += ((uint64_t)1 << (64-l));
 
-	// cout<<"\n mask = "<< hex << mask;
 	cout <<dec;
-	// prnb(mask, 0);
-	// cout << "\n val before : ";
-	// prnb(val,0);
 	while(cnt--)
 	{
 		rv = (val & ((uint64_t)1 << (64-l)))?1:0;
-		// cout<<"\n Rotating";
+
 		val <<= 1;
 		val &= mask;
 		val |= (rv==1?(((uint64_t)1 << (64-r))):0);
 	}
-	// cout << "\n val after : ";
-	// prnb(val, 0);
 }
 
 void make_keys()
@@ -159,8 +151,6 @@ void make_keys()
 	uint64_t left_mask = 0xFFFFFFF000000000;
 	uint64_t right_mask = 0x0000000FFFFFFF00;
 
-	// cout << "\nPC1 = ";
-	// prnb(pc1v);
 	char shifts[16] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
 	for(int i=0;i<16;i++)
 	{
@@ -169,32 +159,21 @@ void make_keys()
 		r = pc1v & right_mask;
 		lrotate(l, 1, 28, shifts[i]);
 		lrotate(r, 29, 56, shifts[i]);
-		// DEBUG
-		// cout << "C and D [" << i + 1 << "]";
-		// prnb(l, 0, 28);
-		// prnb(r<<28, 0, 28); 
 		keys[i] = l | r;
 		pc1v = keys[i];
 		
 		// DO PC2
 		keys[i] = fpc(keys[i], 2);
 		keys[i] &= 0xFFFFFFFFFFFF0000; 	//TAKE ONLY FIRST 48 BITS
-		// cout << "\n key "<< i;
-		// prnb(l, 0);
-		// prnb(r, 0);
-		// prnb(keys[i], 0, 48, 6);
 	}
 }
 
 uint64_t fip(uint64_t m)
 {
-	// prnb(m, 0, 64, 4);
 	uint64_t c = 0;
 	for(int i=0;i<64;i++)
 	{
-		//prnb(c, 1, 64, 4);
 		c <<= 1;
-		// cout << "\nreplacing bit " << i + 1 << " with bit " << ((m & ((uint64_t)1 << (64 - ipa[i])))?1:0) << " from " << dec << (int)ipa[i]; 
 		c |= ((m & ((uint64_t)1 << (64 - ipa[i])))?1:0);
 	}
 	return c;
@@ -202,11 +181,9 @@ uint64_t fip(uint64_t m)
 
 uint64_t subs(uint64_t m, char a[], int sizeofa)	//helper function used to permute and substitute. can replace fip and fpc with some modification
 {
-	// prnb(m, 0, 64, 4);
 	uint64_t c = 0;
 	for(int i=0;i<sizeofa;i++)
 	{
-		//prnb(c, 1, 64, 4);
 		c <<= 1;
 		c |= ((m & ((uint64_t)1 << (64 - a[i])))?1:0);
 	}
@@ -227,9 +204,6 @@ uint64_t s(char i, char row, char col)			//substitution function
 		case 7: sa = s7;break;
 		case 8: sa = s8;break;
 	}
-	// cout << "\nS "<< (int)i << " returning : "<< (uint64_t)sa[a>>62][(a&0x3C00000000000000)>>58];
-	// return (uint64_t)sa[a>>62][(a&0x3C00000000000000)>>58];
-	// cout << "\nS "<< (int)i << " returning : "<< (uint64_t)sa[(int)row][(int)col];
 	return (uint64_t)sa[(int)row][(int)col];
 }
 
@@ -238,37 +212,24 @@ uint64_t s(char i, char row, char col)			//substitution function
 
 uint64_t f(uint64_t r, uint64_t key)			//round function
 {
-	// cout << "\n Inside F";
 	uint64_t newr = subs(r, ea, 48);
-	// cout << "\nKey";
-	// prnb(key, 0, 48, 6);
 	newr ^= key;
-	// cout << "\nkey + newr";
- // 	prnb(newr, 0, 48, 6);
+
  	uint64_t result = 0;
  	uint64_t lmask = 0xFC00000000000000;
  	for(int i=0;i<8;i++)
  	{
- 		// cout << "\nfor ";
- 		// prnb(((lmask & newr) << i), 0, 6, 6);
- 		// // cout << "\ncolumn  :" << GETCOL(newr, i);
- 		// cout << "\nrow :" << GETROW(newr, i);
- 		// cout << "\nsubs is ";
- 		// prnb(s( i + 1, GETROW(newr, i), GETCOL(newr, i)) << 60, 0, 4, 6);
  		result |= ( s( i + 1, GETROW(newr, i), GETCOL(newr, i)) << (60 - i*4) );
  		lmask >>= 6;
  	}
- 	// cout << "\n after S ";
- 	// prnb(result, 0, 32, 4);
  	result = subs(result, pa, 32);
- 	// cout << "\n after P ";
- 	// prnb(result, 0, 32, 4);
  	return result;
 }
 
+uint64_t cmpa[16], cmpb[16];
+
 uint64_t encrypt(uint64_t m)
 {
-	// prnb(fip(m), 0, 64, 4);
 	uint64_t left_mask = 0xFFFFFFFF00000000;
 	uint64_t right_mask = 0x00000000FFFFFFFF;
 	uint64_t l, r, ipv, ln, rn;
@@ -276,10 +237,7 @@ uint64_t encrypt(uint64_t m)
 	l = ipv & left_mask;
 	r = ipv & right_mask;
 	r <<= 32;
-	// cout << "\n m value : ";
-	// prnb(m, 0, 64, 8);
-	// cout << "\nStarting with : ";
-	// prnb(ipv, 0, 64, 8);
+
 	for(int i=0 ; i<16 ; i++)	//16 rounds
 	{
 		ln = r;
@@ -295,17 +253,15 @@ uint64_t encrypt(uint64_t m)
 		{
 			prnb(((r>>32) | r), 0, 64, 8);
 		}
-		cout << "\nKey";
-		prnb(keys[i], 0, 48, 8);
+		cmpa[i] = (keys[i]);
 
 	}
-	// cout << "\n l16 and r16";
-	// prnb(l, 0, 32, 4);
-	// prnb(r, 0, 32, 4);
+
 	uint64_t result = ( (l>>32) | r);
-	// cout << "\nbefore ip-1 ";
-	// prnb(result, 0, 64, 8);
+
 	// // do inverse permutation on result
+	cout << "\nbeofre ipia ";
+	prnb(result, 0,64,8); 
 	result = subs(result, ipia, 64);
 	cout << "\nresult is ";
 	prnb(result, 0, 64, 8);
@@ -318,18 +274,15 @@ uint64_t decrypt(uint64_t c)
 	uint64_t right_mask = 0x00000000FFFFFFFF;
 	uint64_t l, r, ln, rn, ipv;
 	ipv = fip(c);
+	cout << "\nFIP value : ";
+	prnb(ipv, 0, 64, 8);
 	l = ipv & left_mask;
 	r = ipv & right_mask;
-	
-	// cout << "\nc value : ";
-	// prnb(c, 0, 64, 8);
-	// cout << "\n starting with : ";
-	// prnb(ipv, 0, 64, 8);
-	
+	r <<= 32;
+
 	for(int i=0 ; i<16 ; i++)	//16 rounds
 	{
 		ln = r;
-		cout << "\nUsing key " << 15-i;
 		rn = l ^ f(r, keys[15-i]);
 		l = ln;
 		r = rn;
@@ -342,18 +295,18 @@ uint64_t decrypt(uint64_t c)
 		{
 			prnb(((r>>32) | r), 0, 64, 8);
 		}
-		cout << "\nKey";
-		prnb(keys[15-i], 0, 48, 8);
+		cmpb[i] = keys[15-i];
 	}
-	cout << "\n l16 and r16";
-	prnb(l, 0, 32, 4);
-	prnb(r, 0, 32, 4);
+
 	uint64_t result = ( (l>>32) | r);
 	prnb(result, 0, 64, 8);
 	// do inverse permutation on result
 	result = subs(result, ipia, 64);
+	prnb(result, 0, 64, 8);
 	return result;
 }
+
+
 int main()
 {
 	// ifstream infile;
@@ -378,22 +331,21 @@ int main()
 	for(int i=0;i<16;i++)
 		{
 			cout << "\nKey :"<<i;
-			prnb(keys[i], 0, 32, 8);
+			prnb(keys[i], 0, 48, 6);
 		}
 	uint64_t m = 0b0000000100100011010001010110011110001001101010111100110111101111;
 	uint64_t c = 0x85e813540f0ab405;
-	prnb(m, 0,64,8);
-	// uint64_t r = subs(m, ipia, 64);
-	// prnb(r, 0,64,8);
-	// r = subs(r, ipa, 64);
-	// r = fip(r);
-	// prnb(r, 0,64,8);
-	//prnb(encrypt(m), 0, 64, 8);
-	//cout << hex << endl << encrypt(m);
-	// cout << endl;
-	m = 0XF;
+
 	uint64_t cc = encrypt(m);
 	cout << "\nthe encrypted value is " << hex << cc;
+	prnb(subs(cc, ipa, 64), 0, 64, 8);
 	cout << "\nThe decrypted value is " << hex << decrypt(cc);
+
+	for(int i=0;i<16;i++)
+	{
+		if(cmpa[i] == cmpb[15-i])
+			cout << "\nsame " << i;
+	}
+	cout << endl;
 	return 0;
 }	
