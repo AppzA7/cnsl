@@ -43,9 +43,12 @@ def handleConnection(connections, c, addr):
 	name = c.recv(100)
 	print "Connection is from %s" % (name)
 	#add alice connection to the connection pool
-	print "connections : " + str(connections)
 	print "type c = " + str(type(c))
-	connections[name] = c;
+	############################    THIS PART DOES NOT WORK ############# THE SHARED MEMORY
+	item = connections[name] = list()
+	item.append(c)
+	connections[name] = item
+	print "connections : " + str(connections)
 	c.send('Thank you for connecting %s\n' % (name))
 
 
@@ -56,7 +59,7 @@ def handleConnection(connections, c, addr):
 			print name + ' closed Connection'
 			break;
 		if message.split()[0] in connections:	#send the message to the required guy
-			connections[message.split()[0]].send( name + ' ' + message[len(message.split()[0]):] );
+			connections[message.split()[0]][0].send( name + ' ' + message[len(message.split()[0]):] );
 			c.send("message sent successfully")
 		else:
 			c.send("user not online...")
