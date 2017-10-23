@@ -310,7 +310,7 @@ int main()
 	make_keys();	//keys[16] has the 48 bit keys
 
 	uint64_t m = 0b0000000100100011010001010110011110001001101010111100110111101111;
-	m = 0xF123456789ABCDE0;
+	uint64_t m = 0xF123456789ABCDE0;
 	uint64_t cc = encrypt(m);
 	cout << "\nthe encrypted value is " << hex << cc;
 	cout << "\nThe decrypted value is " << hex << decrypt(cc);
