@@ -47,14 +47,7 @@ int main()
 	{
 		m1^=s[i];
 		ccnt++;
-		if(ccnt==146)
-		{
-			mpz_powm(g.get_mpz_t(),m.get_mpz_t(),e.get_mpz_t(),n.get_mpz_t());
-			a[cnt] = g;
-			cnt++;
-			m1=0;m=0;ccnt=0;	
-		}
-		else if(m1>n)
+		if(m1>n)
 		{
 			mpz_powm(g.get_mpz_t(),m.get_mpz_t(),e.get_mpz_t(),n.get_mpz_t());
 			a[cnt] = g;
