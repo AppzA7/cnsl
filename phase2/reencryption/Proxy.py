@@ -3,39 +3,10 @@ import socket
 import signal
 import time
 from multiprocessing import Process, Manager
+import copy_reg
+from multiprocessing.reduction import rebuild_socket, reduce_socket
 
-processes = {}
-#######################         close socket on pressing control c       ########################
-def sigint_handler(signum, frame):
-    print '\nclosing socket'
-    s.shutdown(socket.SHUT_RDWR)
-    s.close()
-    for i in processes:
-    	processes[i].terminate()
-    	if not processes[i].is_alive():
-    		processes[i].join()
-    exit()
- 
-signal.signal(signal.SIGINT, sigint_handler)
-#################################################################################################
-
-port = 9999
-
-########################################   create socket #########################################
-try:
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	print "socket successfully created"
-except socket.error as err:
-	print "socket creation failed with error %s" % (err)
-
-s.bind(('', port))
-print "socket binded to %s"%(port)
-
-s.listen(5)
-print "socket is listening"
-###################################################################################################
-
+copy_reg.pickle(socket.socket, reduce_socket, rebuild_socket)
 
 ##function to handle incoming connections
 def handleConnection(connections, c, addr):
@@ -54,15 +25,16 @@ def handleConnection(connections, c, addr):
 
 	######  listen forever from client till client says to stop  #####
 	while True:
+		message = ""
 		message = c.recv(1024);
 		if message.split()[0] == 'System':
 			print name + ' closed Connection'
 			break;
 		if message.split()[0] in connections:	#send the message to the required guy
-			connections[message.split()[0]][0].send( name + ' ' + message[len(message.split()[0]):] );
+			connections[message.split()[0]][0].send( name + ' : ' + message[len(message.split()[0]):] );
 			c.send("message sent successfully")
 		else:
-			c.send("user not online...")
+			c.send(("user not online... input was %s")%(message))
 		time.sleep(1/1000000.0)
 	
 	print "handler quitting"
@@ -82,6 +54,41 @@ def handleConnection(connections, c, addr):
 
 ############################################   main function   ############################################
 if __name__ == '__main__':
+	## initial definitions
+	processes = {}
+
+	port = 9999
+
+	########################################   create socket #########################################
+	try:
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		print "socket successfully created"
+	except socket.error as err:
+		print "socket creation failed with error %s" % (err)
+
+	s.bind(('0.0.0.0', port))
+	print "socket binded to %s"%(port)
+
+	s.listen(5)
+	print "socket is listening"
+	###################################################################################################
+
+	#######################         close socket on pressing control c       ########################
+	def sigint_handler(signum, frame):
+	    print '\nclosing socket'
+	    s.shutdown(socket.SHUT_RDWR)
+	    s.close()
+	    print "came here"
+	    for i in processes:
+	    	processes[i].terminate()
+	    	if not processes[i].is_alive():
+	    		processes[i].join()
+	    exit()
+	 
+	signal.signal(signal.SIGINT, sigint_handler)
+	#################################################################################################
+
 	## stores the connections by the name of the person who connected
 	## name is the first message sent by the person
 	connections = Manager().dict()

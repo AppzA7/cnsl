@@ -10,7 +10,7 @@ except socket.error as err:
 	print "socket creation failed with error %s" % (err)
 
 try:
-	s.connect(('', port));
+	s.connect(('0.0.0.0', port));
 except socket.error as err:
 	print "connection failed with error %s" % (err)
 
@@ -28,7 +28,10 @@ while True:
 		s.send('System')
 		break
 	message = raw_input('enter message : ');
-	s.send(dest + message);
+	a = dest + " " + message;
+	print "sending %s"%a
+	s.send(a);
+	print
 	result = s.recv(100)
 	print result
 
